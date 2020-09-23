@@ -1,0 +1,17 @@
+<component name="libraryTable">
+  <library name="Gradle: com.huawei.hms:videokit-player:1.0.1.300@aar">
+    <CLASSES>
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/aa82e0c68b1e07e57a58a7923e120e3a/jetified-videokit-player-1.0.1.300/AndroidManifest.xml" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/aa82e0c68b1e07e57a58a7923e120e3a/jetified-videokit-player-1.0.1.300/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/aa82e0c68b1e07e57a58a7923e120e3a/jetified-videokit-player-1.0.1.300/res" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/aa82e0c68b1e07e57a58a7923e120e3a/jetified-videokit-player-1.0.1.300/jars/libs/wiseplayerapi.jar!/" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/aa82e0c68b1e07e57a58a7923e120e3a/jetified-videokit-player-1.0.1.300/jars/libs/wiseplayerbase.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.huawei.hms/videokit-player/1.0.1.300/da39a3ee5e6b4b0d3255bfef95601890afd80709/videokit-player-1.0.1.300-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.huawei.hms/videokit-player/1.0.1.300/da39a3ee5e6b4b0d3255bfef95601890afd80709/videokit-player-1.0.1.300-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
