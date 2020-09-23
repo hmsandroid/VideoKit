@@ -36,10 +36,14 @@ public class PlayActivity extends AppCompatActivity implements Callback , Textur
     private OnPlayWindowListener onPlayWindowListener;
     private int systemUiVisibility = 0;
     private SurfaceHolder surfaceHolder;
+    String url ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
+        if (getIntent().hasExtra("url")) {
+            url = getIntent().getStringExtra("url");
+        }
         onWisePlayerListener = this;
         onPlayWindowListener =this;
         surfaceView = (SurfaceView) findViewById(R.id.surface_view);
@@ -117,7 +121,7 @@ public class PlayActivity extends AppCompatActivity implements Callback , Textur
         player.setBookmark(10000);
         player.setCycleMode(PlayerConstants.CycleMode.MODE_CYCLE);
         // Method 1: Set one URL for a video.
-        player.setPlayUrl("http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
+        player.setPlayUrl(url);
         player.ready();
     }
 
