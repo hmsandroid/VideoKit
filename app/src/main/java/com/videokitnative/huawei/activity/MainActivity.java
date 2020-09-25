@@ -12,6 +12,7 @@ import android.view.View;
 import com.videokitnative.huawei.Movie;
 import com.videokitnative.huawei.R;
 import com.videokitnative.huawei.adaptor.VideoAdaptor;
+import com.videokitnative.huawei.utils.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,22 +32,17 @@ public class MainActivity extends AppCompatActivity implements VideoAdaptor.onMo
         recyclerView.setHasFixedSize(true);
 
         recyclerView.setLayoutManager(new LinearLayoutManager((this)));
-        movieList.add(new Movie(1, "Big Buck Bunny", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", R.drawable.bigbuckbunny));
-        movieList.add(new Movie(2, "Sintel", "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4", R.drawable.sintel));
-        movieList.add(new Movie(3,"Tears of Steel","http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",R.drawable.tearsofsteel));
+        movieList.add(new Movie(1, Constants.MEDIA1_NAME, Constants.MEDIA1_URL, R.drawable.bigbuckbunny));
+        movieList.add(new Movie(2, Constants.MEDIA2_NAME, Constants.MEDIA2_URL, R.drawable.sintel));
+        movieList.add(new Movie(3,Constants.MEDIA3_NAME,Constants.MEDIA3_URL,R.drawable.tearsofsteel));
         adaptor = new VideoAdaptor(this, movieList,this);
         recyclerView.setAdapter(adaptor);
-    }
-
-    public void Play(View view) {
-        Intent intent = new Intent(this, PlayActivity.class);
-        startActivity(intent);
-
     }
 
     @Override
     public void onMovieListener(int position) {
         Intent intent = new Intent(this, PlayActivity.class);
+        intent.putExtra("name",movieList.get(position).getName());
         intent.putExtra("url",movieList.get(position).getUrl());
         context.startActivity(intent);
     }
