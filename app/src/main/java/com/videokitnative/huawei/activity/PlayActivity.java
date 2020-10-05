@@ -1,9 +1,11 @@
 package com.videokitnative.huawei.activity;
 
+import androidx.annotation.LongDef;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Application;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Resources;
@@ -11,6 +13,7 @@ import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -25,21 +28,30 @@ import android.widget.SeekBar;
 import com.huawei.hms.videokit.player.WisePlayer;
 import com.huawei.hms.videokit.player.common.PlayerConstants;
 import com.videokitnative.huawei.R;
+import com.videokitnative.huawei.contract.OnDialogInputValueListener;
 import com.videokitnative.huawei.contract.OnPlayWindowListener;
 import com.videokitnative.huawei.contract.OnWisePlayerListener;
 import com.videokitnative.huawei.control.PlayControl;
 import com.videokitnative.huawei.utils.Constants;
+import com.videokitnative.huawei.utils.DataFormatUtil;
 import com.videokitnative.huawei.utils.DeviceUtil;
+import com.videokitnative.huawei.utils.DialogUtil;
 import com.videokitnative.huawei.utils.LogUtil;
 import com.videokitnative.huawei.utils.PlayControlUtil;
+import com.videokitnative.huawei.utils.StringUtil;
 import com.videokitnative.view.PlayView;
 
 import android.view.TextureView.SurfaceTextureListener;
 import android.widget.Toast;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-public class PlayActivity extends AppCompatActivity implements Callback , SurfaceTextureListener , OnWisePlayerListener , OnPlayWindowListener{
+import static com.videokitnative.huawei.utils.PlayControlUtil.setPlayMode;
+
+public class PlayActivity extends AppCompatActivity implements Callback, SurfaceTextureListener, OnWisePlayerListener, OnPlayWindowListener {
     private static final String TAG = "MainActivity";
     // Play view
     private PlayView playView;
@@ -63,6 +75,9 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
     private boolean isResume = false;
     // Play complete
     private boolean isPlayComplete = false;
+    // Whether to suspend the buffer
+    private int streamRequestMode = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,7 +91,7 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
             url = getIntent().getStringExtra("url");
         }
 
-        playControl = new PlayControl(this, this,name,url);
+        playControl = new PlayControl(this, this, name, url);
         // Some of the properties of preserving vertical screen
         systemUiVisibility = getWindow().getDecorView().getSystemUiVisibility();
         // Set the current vertical screen
@@ -91,7 +106,8 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
     }
 
 
-    /**`
+    /**
+     * `
      * Prepare playing
      */
     private void ready() {
@@ -108,6 +124,7 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
             return null;
         }
     }
+
     /**
      * init the layout
      */
@@ -115,6 +132,7 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
         playView = new PlayView(this, this, this);
         setContentView(playView.getContentView());
     }
+
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
         LogUtil.d(TAG, "surface created");
@@ -128,6 +146,7 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
             }
         }
     }
+
     /**
      * Update the player view
      */
@@ -162,6 +181,7 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
             }
         }
     };
+
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int i, int i1, int i2) {
 
@@ -249,11 +269,13 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
             }
         });
     }
+
     @Override
     public void onStartPlaying(WisePlayer wisePlayer) {
         LogUtil.d(TAG, "onStartPlaying");
         isPlayComplete = false;
     }
+
     @Override
     public void onPlayEnd(WisePlayer wisePlayer) {
         LogUtil.d(TAG, "onPlayEnd " + wisePlayer.getCurrentTime());
@@ -339,7 +361,6 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
     }
 
 
-
     @Override
     public void onItemClick(int pos) {
 
@@ -347,7 +368,76 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
 
     @Override
     public void onSettingItemClick(String itemSelect, int settingType) {
-
+        switch (settingType) {
+            case Constants.MSG_SETTING:
+                Log.d(TAG, "onSettingItemClick: MSG_SETTING CASE.");
+                if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.video_mute_setting))) {
+                    switchVideoMute();
+                } else if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.video_set_bandwidth_mode))) {
+                    switchBandwidthMode();
+                } else if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.video_set_play_speed))) {
+                    setPlaySpeed();
+                } else if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.video_stop_downloading))) {
+                    stopRequestStream();
+                } else if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.video_set_volume))) {
+                    setVideoVolume();
+                } else if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.play_mode))) {
+                    switchPlayMode();
+                } else if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.video_set_loop_play))) {
+                    switchPlayLoop();
+                } else {
+                    LogUtil.i(TAG, "current settings type is " + itemSelect);
+                }
+                break;
+            case Constants.PLAYER_SWITCH_PLAY_SPEED:
+                onSwitchPlaySpeed(itemSelect);
+                break;
+            case Constants.PLAYER_SWITCH_BANDWIDTH_MODE:
+                if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.open_adaptive_bandwidth))) {
+                    playControl.setBandwidthSwitchMode(PlayerConstants.BandwidthSwitchMode.AUTO_SWITCH_MODE, true);
+                } else {
+                    playControl.setBandwidthSwitchMode(PlayerConstants.BandwidthSwitchMode.MANUAL_SWITCH_MODE, true);
+                }
+                break;
+            case Constants.PLAYER_SWITCH_PLAY_MODE:
+                if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.play_audio))) {
+                    setPlayMode(PlayerConstants.PlayMode.PLAY_MODE_AUDIO_ONLY);
+                } else {
+                    setPlayMode(PlayerConstants.PlayMode.PLAY_MODE_NORMAL);
+                }
+                break;
+            case Constants.PLAYER_SWITCH_LOOP_PLAY_MODE:
+                if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.video_loop_play))) {
+                    setCycleMode(true);
+                } else {
+                    setCycleMode(false);
+                }
+                break;
+            case Constants.PLAYER_SWITCH_VIDEO_MUTE_MODE:
+                Log.d(TAG, "onSettingItemClick: PLAYER_SWITCH_VIDEO_MUTE_MODE CASE.");
+                if (TextUtils.equals(itemSelect,
+                        StringUtil.getStringFromResId(PlayActivity.this, R.string.video_mute))) {
+                    playControl.setMute(true);
+                } else {
+                    playControl.setMute(false);
+                }
+                break;
+            case Constants.PLAYER_SWITCH_STOP_REQUEST_STREAM:
+                onSwitchRequestMode(itemSelect);
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
@@ -362,10 +452,35 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
             case R.id.fullscreen_btn:
                 setFullScreen();
                 break;
+            case R.id.play_speed_btn:
+                setPlaySpeed();
+                break;
+            case R.id.setting_tv:
+                onSettingDialog();
+                break;
+            case R.id.volume_btn:
+                setVideoVolume();
+                break;
             default:
                 break;
         }
     }
+
+    /**
+     * Play the Settings dialog
+     */
+    private void onSettingDialog() {
+        List<String> showTextList = new ArrayList<>();
+        showTextList.add(StringUtil.getStringFromResId(this, R.string.video_set_bandwidth_mode));
+        showTextList.add(StringUtil.getStringFromResId(this, R.string.video_stop_downloading));
+        showTextList.add(StringUtil.getStringFromResId(this, R.string.video_set_play_speed));
+        showTextList.add(StringUtil.getStringFromResId(this, R.string.play_mode));
+        showTextList.add(StringUtil.getStringFromResId(this, R.string.video_set_loop_play));
+        showTextList.add(StringUtil.getStringFromResId(this, R.string.video_mute_setting));
+        showTextList.add(StringUtil.getStringFromResId(this, R.string.video_set_volume));
+        playView.showSettingDialog(Constants.MSG_SETTING, showTextList, 0);
+    }
+
     /**
      * Modify the state of play
      */
@@ -382,6 +497,7 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
             playView.setPauseView();
         }
     }
+
     private void backPress() {
         if (!DeviceUtil.isPortrait(getApplicationContext())) {
             playView.hiddenSwitchBitrateTextView();
@@ -396,6 +512,7 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
             finish();
         }
     }
+
     /**
      * Set up the full screen
      */
@@ -412,6 +529,132 @@ public class PlayActivity extends AppCompatActivity implements Callback , Surfac
             playControl.setSurfaceChange();
             playView.showSwitchBitrateTextView();
         }
+    }
+
+    /**
+     * Select the play speed
+     */
+    private void setPlaySpeed() {
+        try {
+            String[] showTextArray = getResources().getStringArray(R.array.play_speed_text);
+            String speedValue = DataFormatUtil.getPlaySpeedString(playControl.getPlaySpeed());
+            LogUtil.d("current play speed : float is " + playControl.getPlaySpeed() + ", and String is" + speedValue);
+            playView.showSettingDialogValue(Constants.PLAYER_SWITCH_PLAY_SPEED, Arrays.asList(showTextArray),
+                    speedValue);
+        } catch (Resources.NotFoundException e) {
+            LogUtil.w(TAG, "get string array error :" + e.getMessage());
+        }
+    }
+
+    /**
+     * Set the play speed
+     *
+     * @param speedValue the play speed
+     */
+    private void onSwitchPlaySpeed(String speedValue) {
+        playControl.setPlaySpeed(speedValue);
+        LogUtil.d(TAG,
+                "current set speed value:" + speedValue + ", and get player speed value:" + playControl.getPlaySpeed());
+        playView.setSpeedButtonText(speedValue);
+    }
+
+    /**
+     * Select whether the mute
+     */
+    private void switchVideoMute() {
+        List<String> showTextList = new ArrayList<>();
+        showTextList.add(getResources().getString(R.string.video_mute));
+        showTextList.add(getResources().getString(R.string.video_not_mute));
+        playView.showSettingDialog(Constants.PLAYER_SWITCH_VIDEO_MUTE_MODE, showTextList,
+                PlayControlUtil.isMute() ? Constants.DIALOG_INDEX_ONE : Constants.DIALOG_INDEX_TWO);
+    }
+
+    /**
+     * Whether to stop the downloading
+     *
+     * @param selectValue Select text value
+     */
+    private void onSwitchRequestMode(String selectValue) {
+        if (selectValue.equals(StringUtil.getStringFromResId(PlayActivity.this, R.string.video_keep_download))) {
+            streamRequestMode = 0;
+        } else if (selectValue.equals(StringUtil.getStringFromResId(PlayActivity.this, R.string.video_stop_download))) {
+            streamRequestMode = 1;
+        }
+        LogUtil.i(TAG, "mStreamRequestMode:" + streamRequestMode);
+
+        playControl.setBufferingStatus(streamRequestMode == 0 ? true : false, true);
+    }
+
+    /**
+     * Whether to stop the download dialog
+     */
+    private void stopRequestStream() {
+        List<String> showTextList = new ArrayList<>();
+        showTextList.add(StringUtil.getStringFromResId(PlayActivity.this, R.string.video_keep_download));
+        showTextList.add(StringUtil.getStringFromResId(PlayActivity.this, R.string.video_stop_download));
+        playView.showSettingDialog(Constants.PLAYER_SWITCH_STOP_REQUEST_STREAM, showTextList, streamRequestMode);
+
+    }
+
+    /**
+     * Show the volume dialog
+     */
+    private void setVideoVolume() {
+        DialogUtil.showSetVolumeDialog(this, new OnDialogInputValueListener() {
+            @Override
+            public void dialogInputListener(String inputText) {
+                playControl.setVolume(StringUtil.valueOf(inputText));
+            }
+        });
+    }
+
+    /**
+     * Set the play mode
+     */
+    private void switchPlayMode() {
+        List<String> showTextList = new ArrayList<>();
+        showTextList.add(getResources().getString(R.string.play_video));
+        showTextList.add(getResources().getString(R.string.play_audio));
+        playView.showSettingDialog(Constants.PLAYER_SWITCH_PLAY_MODE, showTextList, playControl.getPlayMode());
+    }
+
+    /**
+     * Set the play mode
+     *
+     * @param playMode The play mode
+     */
+    private void setPlayMode(int playMode) {
+        playControl.setPlayMode(playMode, true);
+    }
+
+    /**
+     * Set cycle mode
+     *
+     * @param isCycleMode Is cycle mode
+     */
+    public void setCycleMode(boolean isCycleMode) {
+        playControl.setCycleMode(isCycleMode);
+    }
+
+    /**
+     * If set up a video loop
+     */
+    private void switchPlayLoop() {
+        List<String> showTextList = new ArrayList<>();
+        showTextList.add(getResources().getString(R.string.video_loop_play));
+        showTextList.add(getResources().getString(R.string.video_not_loop_play));
+        playView.showSettingDialog(Constants.PLAYER_SWITCH_LOOP_PLAY_MODE, showTextList,
+                playControl.isCycleMode() ? Constants.DIALOG_INDEX_ONE : Constants.DIALOG_INDEX_TWO);
+    }
+
+    /**
+     * Set the bandwidth switch
+     */
+    private void switchBandwidthMode() {
+        List<String> showTextList = new ArrayList<>();
+        showTextList.add(getResources().getString(R.string.close_adaptive_bandwidth));
+        showTextList.add(getResources().getString(R.string.open_adaptive_bandwidth));
+        playView.showSettingDialog(Constants.PLAYER_SWITCH_BANDWIDTH_MODE, showTextList, Constants.DIALOG_INDEX_ONE);
     }
 
 }

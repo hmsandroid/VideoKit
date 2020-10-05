@@ -26,6 +26,7 @@ import com.videokitnative.huawei.contract.OnWisePlayerListener;
 import com.videokitnative.huawei.utils.Constants;
 import com.videokitnative.huawei.utils.DataFormatUtil;
 import com.videokitnative.huawei.utils.DeviceUtil;
+import com.videokitnative.huawei.utils.DialogUtil;
 import com.videokitnative.huawei.utils.LogUtil;
 import com.videokitnative.huawei.utils.PlayControlUtil;
 import com.videokitnative.huawei.utils.TimeUtil;
@@ -73,6 +74,8 @@ public class PlayView {
 
     // Full screen Button
     private Button fullScreenBt;
+    // Volume Button
+    private Button volumeButton;
 
     // Video action button layout
     private FrameLayout controlLayout;
@@ -111,6 +114,8 @@ public class PlayView {
 
     // Switching bitrate prompt
     private TextView switchingBitrateTv;
+    // Setting
+    private TextView settingsTv;
 
     /**
      * Constructor
@@ -164,6 +169,8 @@ public class PlayView {
             backTv.setOnClickListener(onPlayWindowListener);
             fullScreenBt = (Button) view.findViewById(R.id.fullscreen_btn);
             fullScreenBt.setOnClickListener(onPlayWindowListener);
+            volumeButton = (Button) view.findViewById(R.id.volume_btn);
+            volumeButton.setOnClickListener(onPlayWindowListener);
             videoBufferLayout = (RelativeLayout) view.findViewById(R.id.buffer_rl);
             videoBufferLayout.setVisibility(View.GONE);
             controlLayout = (FrameLayout) view.findViewById(R.id.control_layout);
@@ -174,17 +181,18 @@ public class PlayView {
             videoSizeTv = (TextView) view.findViewById(R.id.video_width_and_height);
             videoTimeTv = (TextView) view.findViewById(R.id.video_time);
             videoDownloadTv = (TextView) view.findViewById(R.id.video_download_speed);
+            videoBitrateTv = (TextView) view.findViewById(R.id.video_bitrate);
             switchBitrateTv = (TextView) view.findViewById(R.id.switch_bitrate_tv);
             switchBitrateTv.setOnClickListener(onPlayWindowListener);
             switchBitrateTv.setVisibility(View.GONE);
             switchingBitrateTv = (TextView) view.findViewById(R.id.switching_bitrate_tv);
             switchingBitrateTv.setVisibility(View.GONE);
+            speedTv = (TextView) view.findViewById(R.id.play_speed_btn);
+            speedTv.setOnClickListener(onPlayWindowListener);
+            settingsTv = (TextView) view.findViewById(R.id.setting_tv);
+            settingsTv.setOnClickListener(onPlayWindowListener);
         }
     }
-
-
-
-
     /**
      * Update play view
      *
@@ -255,6 +263,11 @@ public class PlayView {
         seekBar.setSecondaryProgress(bufferPosition);
         currentTimeTv.setText(TimeUtil.formatLongToTimeStr(progress));
         videoDownloadTv.setText(context.getResources().getString(R.string.video_download_speed, bufferingSpeed));
+        if (bitrate == 0) {
+            videoBitrateTv.setText(context.getResources().getString(R.string.video_bitrate_empty));
+        } else {
+            videoBitrateTv.setText(context.getResources().getString(R.string.video_bitrate, bitrate));
+        }
     }
 
     /**
@@ -322,7 +335,35 @@ public class PlayView {
     public SurfaceView getSurfaceView() {
         return surfaceView;
     }
+    /**
+     * Show setting dialog
+     *
+     * @param settingType Setting type
+     * @param showTextList Setting text list
+     * @param selectIndex Default select index
+     */
+    public void showSettingDialog(int settingType, List<String> showTextList, int selectIndex) {
+        DialogUtil.onSettingDialogSelectIndex(context, settingType, showTextList, selectIndex, onPlayWindowListener);
+    }
 
+    /**
+     * Show setting dialog
+     *
+     * @param settingType Setting type
+     * @param showTextList Setting text list
+     * @param selectValue Default select value
+     */
+    public void showSettingDialogValue(int settingType, List<String> showTextList, String selectValue) {
+        DialogUtil.onSettingDialogSelectValue(context, settingType, showTextList, selectValue, onPlayWindowListener);
+    }
+    /**
+     * Set speed button text
+     *
+     * @param speedText speed value
+     */
+    public void setSpeedButtonText(String speedText) {
+        speedTv.setText(speedText);
+    }
     /**
      * Set default value
      */
@@ -333,7 +374,8 @@ public class PlayView {
         videoSizeTv.setText(context.getResources().getString(R.string.video_width_and_height, 0, 0));
         videoTimeTv.setText(context.getResources().getString(R.string.video_time, TimeUtil.formatLongToTimeStr(0)));
         videoDownloadTv.setText(context.getResources().getString(R.string.video_download_speed, 0));
-
+        videoBitrateTv.setText(context.getResources().getString(R.string.video_bitrate_empty));
+        speedTv.setText("1.0x");
     }
 
     /**
